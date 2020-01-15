@@ -15,7 +15,7 @@ nb = "~0.1"
 
 [dependencies.feather_m0]
 version = "~0.6"
-features = ["default"]
+features = ["default", "unproven"]
 
 [profile.release]
 # Tell `rustc` to optimize for small code size.
