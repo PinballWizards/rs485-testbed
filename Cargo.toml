@@ -9,13 +9,13 @@ edition = "2018"
 [dependencies]
 panic-halt = "~0.2"
 cortex-m = "~0.6"
+cortex-m-rt = "~0.6"
 cortex-m-semihosting = "~0.3"
+cortex-m-rtfm = "~0.5"
+atsamd21g18a = "~0.6"
 embedded-hal = "~0.2"
 nb = "~0.1"
-
-[dependencies.feather_m0]
-version = "~0.6"
-features = ["default", "unproven"]
+rs485-transport = { git = "https://github.com/PinballWizards/rs485-transport.git", branch = "master" }
 
 [profile.release]
 # Tell `rustc` to optimize for small code size.
