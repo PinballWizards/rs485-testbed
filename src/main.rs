@@ -6,12 +6,10 @@ extern crate cortex_m_semihosting;
 extern crate feather_m0 as hal;
 extern crate panic_halt;
 extern crate rtfm;
-#[macro_use]
-extern crate nb;
 
 use hal::{
     clock::GenericClockController,
-    pac::{CorePeripherals, Interrupt, Peripherals},
+    pac::{CorePeripherals, Peripherals},
     prelude::*,
 };
 use rs485_transport::Transport;
