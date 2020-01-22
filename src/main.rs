@@ -7,11 +7,7 @@ extern crate feather_m0 as hal;
 extern crate panic_halt;
 extern crate rtfm;
 
-use hal::{
-    clock::GenericClockController,
-    pac::{CorePeripherals, Peripherals},
-    prelude::*,
-};
+use hal::{clock::GenericClockController, pac::Peripherals, prelude::*};
 use rs485_transport::Transport;
 
 const DEVICE_ADDRESS: u8 = 0x1;
@@ -32,7 +28,6 @@ const APP: () = {
     }
     #[init]
     fn init(_: init::Context) -> init::LateResources {
-        let mut core = CorePeripherals::take().unwrap();
         let mut peripherals = Peripherals::take().unwrap();
         let mut clocks = GenericClockController::with_external_32kosc(
             peripherals.GCLK,
@@ -66,9 +61,19 @@ const APP: () = {
         }
     }
 
-    #[idle]
-    fn idle(_: idle::Context) -> ! {
-        loop {}
+    #[idle(spawn = [testing])]
+    fn idle(cx: idle::Context) -> ! {
+        loop {
+            cx.spawn.testing().unwrap();
+        }
+    }
+
+    #[task(resources = [transport])]
+    fn testing(cx: testing::Context) {
+        match cx.resources.transport.parse_data_buffer() {
+            Some(frame) => (),
+            _ => (),
+        };
     }
 
     #[task(binds = SERCOM0, resources = [transport, uart, sercom0])]
@@ -88,5 +93,9 @@ const APP: () = {
                 _ => (),
             };
         }
+    }
+
+    extern "C" {
+        fn SERCOM5();
     }
 };

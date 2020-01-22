@@ -17,3 +17,6 @@ Cargo.lock
 !.vscode/launch.json
 !.vscode/extensions.json
 *.code-workspace
+
+# Adafruit flash files
+**/*.uf2
