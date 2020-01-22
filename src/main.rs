@@ -83,10 +83,10 @@ const APP: () = {
             .bit_is_set()
         {
             let data = cx.resources.sercom0.usart().data.read().bits();
-            cx.resources
-                .transport
-                .ingest(data)
-                .map_or((), |resp| cx.resources.uart.bwrite_all(&resp).unwrap());
+            match cx.resources.transport.ingest(data) {
+                Some(resp) => cx.resources.uart.bwrite_all(&resp).unwrap(),
+                _ => (),
+            };
         }
     }
 };
