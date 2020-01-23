@@ -8,7 +8,7 @@ extern crate panic_halt;
 extern crate rtfm;
 
 use hal::{clock::GenericClockController, pac::Peripherals, prelude::*};
-use rs485_transport::Transport;
+use palantir::{Bus, Palantir};
 
 const DEVICE_ADDRESS: u8 = 0x1;
 
@@ -22,7 +22,7 @@ type UARTPeripheral = hal::sercom::UART0<
 #[rtfm::app(device = hal::pac)]
 const APP: () = {
     struct Resources {
-        transport: Transport,
+        palantir: Palantir,
         uart: UARTPeripheral,
         sercom0: hal::pac::SERCOM0,
     }
@@ -37,12 +37,11 @@ const APP: () = {
         );
         let mut pins = hal::Pins::new(peripherals.PORT);
 
-        // Enable sercom0 receive complete interrupt
-        peripherals
-            .SERCOM0
-            .usart_mut()
-            .intenset
-            .write(|w| w.rxc().set_bit());
+        // Enable sercom0 receive complete interrupt and error interrupt
+        peripherals.SERCOM0.usart_mut().intenset.write(|w| {
+            w.rxc().set_bit();
+            w.error().set_bit()
+        });
 
         let uart = hal::uart(
             &mut clocks,
@@ -55,7 +54,7 @@ const APP: () = {
         );
 
         init::LateResources {
-            transport: Transport::new(DEVICE_ADDRESS),
+            palantir: Palantir::new(DEVICE_ADDRESS),
             uart: uart,
             sercom0: unsafe { Peripherals::steal().SERCOM0 },
         }
@@ -68,30 +67,26 @@ const APP: () = {
         }
     }
 
-    #[task(resources = [transport])]
+    #[task(resources = [palantir])]
     fn testing(cx: testing::Context) {
-        match cx.resources.transport.parse_data_buffer() {
-            Some(frame) => (),
+        match cx.resources.palantir.poll() {
+            Some(msg) => (),
             _ => (),
         };
     }
 
-    #[task(binds = SERCOM0, resources = [transport, uart, sercom0])]
+    #[task(binds = SERCOM0, resources = [palantir, uart, sercom0])]
     fn sercom0(cx: sercom0::Context) {
-        if cx
-            .resources
-            .sercom0
-            .usart_mut()
-            .intflag
-            .read()
-            .rxc()
-            .bit_is_set()
-        {
-            let data = cx.resources.sercom0.usart().data.read().bits();
-            match cx.resources.transport.ingest(data) {
-                Some(resp) => cx.resources.uart.bwrite_all(&resp).unwrap(),
-                _ => (),
-            };
+        let intflag = cx.resources.sercom0.usart_mut().intflag.read();
+        if intflag.rxc().bit_is_set() {
+            cx.resources.palantir.ingest();
+        } else if intflag.error().bit_is_set() {
+            // Collision error detected, wait for NAK and resend
+            cx.resources
+                .sercom0
+                .usart_mut()
+                .intflag
+                .write(|w| w.error().set_bit());
         }
     }
 

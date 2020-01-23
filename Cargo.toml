@@ -12,7 +12,7 @@ cortex-m = "~0.6"
 cortex-m-semihosting = "~0.3"
 cortex-m-rtfm = "~0.5"
 feather_m0 = { version = "~0.6", features = ["unproven"] }
-rs485-transport = { git = "https://github.com/PinballWizards/rs485-transport.git", branch = "master" }
+palantir = { git = "https://github.com/PinballWizards/palantir.git", branch = "master" }
 
 [profile.release]
 # Tell `rustc` to optimize for small code size.
